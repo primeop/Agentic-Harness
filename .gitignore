@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Internal / not for the public repo
+REPO_PRESENTATION.md
+
+# Secrets (real-agent adapter)
+.env
+*.key
