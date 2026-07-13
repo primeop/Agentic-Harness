@@ -1,5 +1,7 @@
 # agentic-harness
 
+![agentic-harness — the agentic attack surface is an authorization surface](assets/social-preview.png)
+
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![dependencies](https://img.shields.io/badge/runtime%20deps-0-green)

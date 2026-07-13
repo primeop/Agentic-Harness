@@ -1,0 +1,75 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a1019"/>
+      <stop offset="1" stop-color="#0c1a2c"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.12" r="0.7">
+      <stop offset="0" stop-color="#1d3a5f" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#0c1a2c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="spine" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f85149"/>
+      <stop offset="0.5" stop-color="#d29922"/>
+      <stop offset="1" stop-color="#3fb950"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+  <rect x="0" y="0" width="8" height="640" fill="url(#spine)"/>
+
+  <!-- padlock glyph -->
+  <g>
+    <path d="M89,120 v-9 a15,15 0 0 1 30,0 v9" fill="none" stroke="#58a6ff" stroke-width="7" stroke-linecap="round"/>
+    <rect x="80" y="118" width="48" height="40" rx="8" fill="#12213a" stroke="#58a6ff" stroke-width="2.5"/>
+    <circle cx="104" cy="134" r="5" fill="#58a6ff"/>
+    <rect x="102" y="134" width="4" height="13" rx="2" fill="#58a6ff"/>
+  </g>
+
+  <!-- header text -->
+  <text x="150" y="104" font-family="DejaVu Sans Mono, monospace" font-size="22" fill="#7d8fa8">primeop /</text>
+  <text x="150" y="162" font-family="DejaVu Sans, sans-serif" font-size="60" font-weight="bold" fill="#e6edf3">agentic-harness</text>
+
+  <!-- top-right meta -->
+  <text x="1200" y="60" text-anchor="end" font-family="DejaVu Sans Mono, monospace" font-size="17" fill="#6c7f96">OWASP LLM Top 10  &#183;  structural detection  &#183;  0 deps  &#183;  MIT</text>
+
+  <!-- thesis -->
+  <text x="80" y="232" font-family="DejaVu Sans, sans-serif" font-size="34" fill="#c9d4e0">The agentic attack surface is an</text>
+  <text x="80" y="279" font-family="DejaVu Sans, sans-serif" font-size="34" font-weight="bold" fill="#58a6ff">authorization surface.</text>
+
+  <!-- delta cards -->
+  <g>
+    <rect x="80" y="322" width="330" height="176" rx="14" fill="#0f1c2e" stroke="#f85149" stroke-opacity="0.45" stroke-width="1.5"/>
+    <circle cx="106" cy="358" r="5" fill="#f85149"/>
+    <text x="122" y="364" font-family="DejaVu Sans Mono, monospace" font-size="17" fill="#9aa7b8">NO AUTHZ</text>
+    <text x="104" y="436" font-family="DejaVu Sans, sans-serif" font-size="60" font-weight="bold" fill="#f85149">5/5</text>
+    <text x="106" y="474" font-family="DejaVu Sans, sans-serif" font-size="21" fill="#c9d4e0">probes fail</text>
+  </g>
+
+  <text x="430" y="424" font-family="DejaVu Sans, sans-serif" font-size="38" fill="#4d5e75">&#8594;</text>
+
+  <g>
+    <rect x="476" y="322" width="330" height="176" rx="14" fill="#0f1c2e" stroke="#3fb950" stroke-opacity="0.5" stroke-width="1.5"/>
+    <circle cx="502" cy="358" r="5" fill="#3fb950"/>
+    <text x="518" y="364" font-family="DejaVu Sans Mono, monospace" font-size="17" fill="#9aa7b8">CAPABILITY-SCOPED</text>
+    <text x="500" y="436" font-family="DejaVu Sans, sans-serif" font-size="60" font-weight="bold" fill="#3fb950">0/5</text>
+    <text x="502" y="474" font-family="DejaVu Sans, sans-serif" font-size="21" fill="#c9d4e0">probes fail</text>
+  </g>
+
+  <text x="826" y="424" font-family="DejaVu Sans, sans-serif" font-size="38" fill="#4d5e75">&#8594;</text>
+
+  <g>
+    <rect x="872" y="322" width="330" height="176" rx="14" fill="#0f1c2e" stroke="#d29922" stroke-opacity="0.55" stroke-width="1.5"/>
+    <circle cx="898" cy="358" r="5" fill="#e3b341"/>
+    <text x="914" y="364" font-family="DejaVu Sans Mono, monospace" font-size="17" fill="#9aa7b8">IN-SCOPE INJECTION</text>
+    <text x="896" y="432" font-family="DejaVu Sans, sans-serif" font-size="44" font-weight="bold" fill="#e3b341">STILL FIRES</text>
+    <text x="898" y="474" font-family="DejaVu Sans, sans-serif" font-size="21" fill="#c9d4e0">scoping &#8800; cure</text>
+  </g>
+
+  <!-- trace strip: shows structural detection at the tool boundary -->
+  <rect x="80" y="540" width="1122" height="56" rx="10" fill="#0d182780" stroke="#233450" stroke-width="1.5"/>
+  <text x="100" y="575" font-family="DejaVu Sans Mono, monospace" font-size="19">
+    <tspan fill="#6c7f96">trace &#9656; </tspan><tspan fill="#c9d4e0">transfer_funds({...})</tspan><tspan fill="#6c7f96">  &#8594;  </tspan><tspan fill="#f85149" font-weight="bold">DENIED</tspan><tspan fill="#6c7f96">   scope 'admin' &#8713; principal{read}</tspan>
+  </text>
+</svg>
