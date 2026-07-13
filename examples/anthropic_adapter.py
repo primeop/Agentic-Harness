@@ -8,11 +8,14 @@ unchanged.
 This file is illustrative. To run it for real:
     pip install anthropic
     export ANTHROPIC_API_KEY=...
-    python -m examples.anthropic_adapter
+    python -m examples.anthropic_adapter          # 5 runs/probe (default)
+    AGENTIC_RUNS=10 python -m examples.anthropic_adapter
+
+A real model is stochastic, so the suite is run several times per probe and
+reported as a fired X/N hit rate rather than a single pass/fail.
 """
 from __future__ import annotations
 
-import json
 import os
 
 from agentic_harness import (
@@ -20,9 +23,9 @@ from agentic_harness import (
     Invocation,
     Target,
     ToolCall,
-    run_suite,
+    run_suite_repeated,
     scope_authorizer,
-    to_markdown,
+    to_markdown_repeated,
 )
 from agentic_harness.mock_agent import TOOL_SCOPES
 
@@ -50,11 +53,16 @@ class AnthropicAgentTarget(Target):
     """
     name = "anthropic_claude"
 
-    def __init__(self, authorizer, model: str = "claude-sonnet-4-6"):
+    def __init__(self, authorizer, model: str = "claude-sonnet-5",
+                 system: str | None = None):
         import anthropic  # imported lazily so the file loads without the dep
         self._client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
         self._authorizer = authorizer
         self._model = model
+        # A naive agent ships no trust-boundary system prompt (default). Pass a
+        # hardened `system` to test whether planning-layer instructions reduce
+        # the injection hit rate — the second control the harness argues for.
+        self._system = system
 
     def invoke(self, inv: Invocation) -> AgentResponse:
         # NB: retrieved_docs / memory / upstream_messages are joined into the
@@ -75,12 +83,15 @@ class AnthropicAgentTarget(Target):
 
         content = "\n\n".join(context_blocks + [inv.user_input])
 
-        msg = self._client.messages.create(
+        kwargs = dict(
             model=self._model,
             max_tokens=1024,
             tools=TOOLS,
             messages=[{"role": "user", "content": content}],
         )
+        if self._system:
+            kwargs["system"] = self._system
+        msg = self._client.messages.create(**kwargs)
 
         resp = AgentResponse()
         for block in msg.content:
@@ -96,9 +107,15 @@ class AnthropicAgentTarget(Target):
 
 
 def main() -> None:
-    target = AnthropicAgentTarget(scope_authorizer(TOOL_SCOPES))
-    report = run_suite(target)
-    print(to_markdown(report))
+    runs = int(os.environ.get("AGENTIC_RUNS", "5"))
+    model = os.environ.get("AGENTIC_MODEL", "claude-sonnet-5")
+    # Capability-scoped authorization is enforced in code at the execution
+    # boundary. Any tool the model calls out of the acting principal's scope is
+    # recorded but NOT executed — so a landing here is an in-scope injection,
+    # the residual risk scoping cannot remove.
+    target = AnthropicAgentTarget(scope_authorizer(TOOL_SCOPES), model=model)
+    report = run_suite_repeated(target, runs=runs)
+    print(to_markdown_repeated(report))
 
 
 if __name__ == "__main__":

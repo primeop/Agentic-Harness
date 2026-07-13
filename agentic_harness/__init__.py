@@ -5,8 +5,14 @@ excessive agency, cross-agent trust, memory poisoning) and demonstrates the fix
 via capability-scoped tool authorization.
 """
 from .mock_agent import MockAgent, TOOL_SCOPES, build_mock
-from .report import to_json, to_markdown
-from .runner import Report, run_suite
+from .report import to_json, to_markdown, to_markdown_repeated
+from .runner import (
+    ProbeStats,
+    RepeatedReport,
+    Report,
+    run_suite,
+    run_suite_repeated,
+)
 from .target import (
     AgentResponse,
     Authorizer,
@@ -22,7 +28,8 @@ from .target import (
 __version__ = "0.1.0"
 __all__ = [
     "MockAgent", "TOOL_SCOPES", "build_mock",
-    "run_suite", "Report", "to_markdown", "to_json",
+    "run_suite", "run_suite_repeated", "Report", "RepeatedReport", "ProbeStats",
+    "to_markdown", "to_markdown_repeated", "to_json",
     "Target", "Invocation", "Principal", "AgentResponse", "ToolCall",
     "Authorizer", "allow_all", "scope_authorizer", "PolicyEnforcedTarget",
 ]
