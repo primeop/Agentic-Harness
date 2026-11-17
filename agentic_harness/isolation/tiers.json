@@ -1,0 +1,43 @@
+{
+  "tiers": [
+    {
+      "id": "C0",
+      "label": "In-process (no isolation)",
+      "backend": "inprocess"
+    },
+    {
+      "id": "C1",
+      "label": "Default Docker (runc, root, bridged network)",
+      "backend": "docker",
+      "runtime": "runc"
+    },
+    {
+      "id": "C2",
+      "label": "Hardened runc (non-root, no caps, no-new-privileges, read-only rootfs, limits)",
+      "backend": "docker",
+      "runtime": "runc",
+      "policy": {
+        "user": "65534:65534",
+        "cap_drop_all": true,
+        "no_new_privileges": true,
+        "read_only_rootfs": true,
+        "pids_limit": 128,
+        "memory": "256m"
+      }
+    },
+    {
+      "id": "C2-gvisor",
+      "label": "C2 policy on gVisor (runsc)",
+      "backend": "docker",
+      "runtime": "runsc",
+      "policy": {
+        "user": "65534:65534",
+        "cap_drop_all": true,
+        "no_new_privileges": true,
+        "read_only_rootfs": true,
+        "pids_limit": 128,
+        "memory": "256m"
+      }
+    }
+  ]
+}
