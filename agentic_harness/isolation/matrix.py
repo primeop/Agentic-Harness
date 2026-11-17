@@ -86,7 +86,9 @@ def run_matrix(tier_ids: list[str], tiers_file: Path = DEFAULT_TIERS,
         raise SystemExit(f"unknown tier(s) {unknown}; available: {list(all_tiers)}")
     tiers = [all_tiers[t] for t in tier_ids]
     use_docker = any(t.backend == "docker" for t in tiers)
-    lab = Lab(use_docker=use_docker)
+    need_proxy = any(p.network == "egress" for t in tiers
+                     for p in (t.default, *t.per_tool.values()))
+    lab = Lab(use_docker=use_docker, need_proxy=need_proxy)
     out = {"tiers": [], "skipped": {}, "rows": [{"id": r.id, "title": r.title, "benign": r.benign}
                                                  for r in rows], "results": {}}
     try:

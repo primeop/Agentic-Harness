@@ -1,6 +1,6 @@
 """Canary sink: the attacker-controlled endpoint in the lab.
 
-Records every HTTP request and every raw TCP payload it receives. The
+Records every HTTP request, raw TCP payload and UDP datagram it receives. The
 harness reads the log back to decide, from ground truth, whether a secret
 actually left the sandbox. Standalone and stdlib-only so it can run as a
 host process or inside a container.
@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 LOG = []
 LOCK = threading.Lock()
+REPLY = "ok"   # body returned for ordinary requests (--reply)
 
 
 def record(entry):
@@ -40,13 +41,13 @@ class Http(BaseHTTPRequestHandler):
                 LOG.clear()
             return self._reply("reset")
         record({"proto": "http", "method": "GET", "path": self.path, "body": ""})
-        self._reply("ok")
+        self._reply(REPLY)
 
     def do_POST(self):
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(min(n, 65536)).decode("utf-8", "replace")
         record({"proto": "http", "method": "POST", "path": self.path, "body": body})
-        self._reply("ok")
+        self._reply(REPLY)
 
     def log_message(self, *_):
         pass
@@ -67,6 +68,11 @@ class Tcp(socketserver.BaseRequestHandler):
         record({"proto": "tcp", "body": b"".join(chunks).decode("utf-8", "replace")})
 
 
+class Udp(socketserver.BaseRequestHandler):
+    def handle(self):
+        record({"proto": "udp", "body": self.request[0][:4096].decode("latin-1")})
+
+
 class TcpServer(socketserver.ThreadingTCPServer):
     allow_reuse_address = True
     daemon_threads = True
@@ -76,9 +82,16 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--bind", default="0.0.0.0")
     ap.add_argument("--http", type=int, default=8080)
-    ap.add_argument("--tcp", type=int, default=8081)
+    ap.add_argument("--tcp", type=int, default=8081, help="0 disables")
+    ap.add_argument("--udp", type=int, default=8053, help="0 disables")
+    ap.add_argument("--reply", default="ok")
     a = ap.parse_args()
-    tcp = TcpServer((a.bind, a.tcp), Tcp)
-    threading.Thread(target=tcp.serve_forever, daemon=True).start()
+    REPLY = a.reply
+    if a.tcp:
+        tcp = TcpServer((a.bind, a.tcp), Tcp)
+        threading.Thread(target=tcp.serve_forever, daemon=True).start()
+    if a.udp:
+        udp = socketserver.ThreadingUDPServer((a.bind, a.udp), Udp)
+        threading.Thread(target=udp.serve_forever, daemon=True).start()
     ThreadingHTTPServer.allow_reuse_address = True
     ThreadingHTTPServer((a.bind, a.http), Http).serve_forever()

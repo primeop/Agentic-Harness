@@ -9,7 +9,7 @@ runtime controls contain what it can do.
 ```bash
 python -m unittest tests.test_isolation -v          # no Docker needed
 python -m agentic_harness.isolation --tiers C0      # in-process baseline only
-python -m agentic_harness.isolation                 # C0, C1, C2, C2-gvisor
+python -m agentic_harness.isolation                 # C0, C1, C2, C3, C3-gvisor
 ```
 
 Docker tiers need a Docker daemon the current user can reach (or
@@ -24,7 +24,10 @@ gVisor tier. Output goes to `reports/containment/matrix.md` and
 - `policy.py` + `tiers.json`: declarative runtime policy per tier and per tool.
 - `tools/run_tool.py`: deliberately naive real tools (file, shell, HTTP).
 - `attacks.py`: scripted post-injection tool calls, grouped into matrix rows.
-- `lab.py` + `sink.py`: fresh random canaries per run and an attacker sink.
+- `lab.py` + `sink.py`: fresh random canaries per run, an attacker sink, and a
+  legitimate API the HTTP tool is allowed to call.
+- `proxy.py`: allowlisting egress proxy, the only bridge out of the internal
+  sandbox network (tier C3).
 - `matrix.py`: runs every variant under every tier and scores containment.
 
 ## Scoring rules
@@ -39,7 +42,9 @@ gVisor tier. Output goes to `reports/containment/matrix.md` and
 
 ## Not built yet
 
-- Egress policy (deny by default, per-tool allowlist), including DNS
+- DNS exfiltration through the configured resolver (today's DNS variant sends
+  UDP straight to an attacker nameserver)
+- HTTPS through the egress proxy (CONNECT is refused; lab services are HTTP)
 - Credential scoping (no ambient credentials, short-lived scoped tokens)
 - Custom seccomp profile (C2 currently uses Docker's default profile)
 - Persistence, lateral movement, and escape-surface rows

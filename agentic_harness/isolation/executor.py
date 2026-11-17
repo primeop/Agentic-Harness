@@ -38,6 +38,8 @@ class SandboxContext:
     docker: list[str] = field(default_factory=lambda: ["docker"])
     image: str = "python:3.12-alpine"
     network: str = "ah-lab"
+    internal_network: str = "ah-internal"
+    egress_proxy: str | None = None  # http://<proxy ip>:3128 as seen from the internal network
     tools_dir: Path = Path(run_tool.__file__).resolve().parent
 
 
@@ -100,7 +102,8 @@ def build_docker_argv(tier: Tier, policy: ToolPolicy, ctx: SandboxContext,
     argv = [*ctx.docker, "run", "--rm", "--name", name]
     if tier.runtime:
         argv += ["--runtime", tier.runtime]
-    argv += ["--network", "none" if policy.network == "none" else ctx.network]
+    argv += ["--network", {"none": "none", "lab": ctx.network,
+                           "egress": ctx.internal_network}[policy.network]]
     if policy.user:
         argv += ["--user", policy.user]
     if policy.cap_drop_all:
@@ -116,6 +119,10 @@ def build_docker_argv(tier: Tier, policy: ToolPolicy, ctx: SandboxContext,
     if policy.memory:
         argv += ["--memory", policy.memory]
     argv += ["-e", "PYTHONDONTWRITEBYTECODE=1"]
+    if policy.network == "egress":
+        if not ctx.egress_proxy:
+            raise RuntimeError("policy asks for egress control but no proxy is running")
+        argv += ["-e", f"AH_EGRESS_PROXY={ctx.egress_proxy}"]
     if policy.ambient_env_creds:
         argv += ["-e", f"{CRED_ENV_VAR}={ctx.cred_env_value}"]
     argv += ["-v", f"{ctx.tools_dir}:/tools:ro",

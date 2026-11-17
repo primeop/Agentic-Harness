@@ -26,6 +26,26 @@
       }
     },
     {
+      "id": "C3",
+      "label": "C2 + egress control: no network by default; http_fetch only via allowlisting proxy",
+      "backend": "docker",
+      "runtime": "runc",
+      "policy": {
+        "user": "65534:65534",
+        "cap_drop_all": true,
+        "no_new_privileges": true,
+        "read_only_rootfs": true,
+        "pids_limit": 128,
+        "memory": "256m",
+        "network": "none"
+      },
+      "tools": {
+        "http_fetch": {
+          "network": "egress"
+        }
+      }
+    },
+    {
       "id": "C2-gvisor",
       "label": "C2 policy on gVisor (runsc)",
       "backend": "docker",
@@ -37,6 +57,26 @@
         "read_only_rootfs": true,
         "pids_limit": 128,
         "memory": "256m"
+      }
+    },
+    {
+      "id": "C3-gvisor",
+      "label": "C3 policy on gVisor (runsc)",
+      "backend": "docker",
+      "runtime": "runsc",
+      "policy": {
+        "user": "65534:65534",
+        "cap_drop_all": true,
+        "no_new_privileges": true,
+        "read_only_rootfs": true,
+        "pids_limit": 128,
+        "memory": "256m",
+        "network": "none"
+      },
+      "tools": {
+        "http_fetch": {
+          "network": "egress"
+        }
       }
     }
   ]

@@ -61,6 +61,68 @@ class PolicyToFlags(unittest.TestCase):
             ToolPolicy(network="host")
 
 
+class EgressPolicy(unittest.TestCase):
+    def test_c3_per_tool_network(self):
+        from dataclasses import replace
+        ctx = replace(CTX, egress_proxy="http://10.0.0.2:3128")
+        tier = load_tiers()["C3"]
+        sh = build_docker_argv(tier, tier.policy_for("shell"), ctx, "n", "shell", {})
+        self.assertEqual(sh[sh.index("--network") + 1], "none")
+        self.assertFalse(any("AH_EGRESS_PROXY" in x for x in sh))
+        fetch = build_docker_argv(tier, tier.policy_for("http_fetch"), ctx, "n", "http_fetch", {})
+        self.assertEqual(fetch[fetch.index("--network") + 1], "ah-internal")
+        self.assertIn("AH_EGRESS_PROXY=http://10.0.0.2:3128", fetch)
+
+    def test_egress_without_proxy_is_an_error(self):
+        tier = load_tiers()["C3"]
+        with self.assertRaises(RuntimeError):
+            build_docker_argv(tier, tier.policy_for("http_fetch"), CTX, "n", "http_fetch", {})
+
+    def test_proxy_allows_only_allowlisted_destination(self):
+        """Real proxy, real services, no Docker: the allowed service answers,
+        the other one is refused and never receives the request."""
+        import json, subprocess, sys, time, urllib.request
+        from agentic_harness.isolation.tools import run_tool
+        iso = Path(run_tool.__file__).resolve().parents[1]
+        svc = lambda port, reply: subprocess.Popen(
+            [sys.executable, str(iso / "sink.py"), "--bind", "127.0.0.1", "--http", str(port),
+             "--tcp", "0", "--udp", "0", "--reply", reply])
+        procs = [svc(18091, "ALLOWED"), svc(18092, "BLOCKED"),
+                 subprocess.Popen([sys.executable, str(iso / "proxy.py"), "--bind", "127.0.0.1",
+                                   "--port", "18093", "--allow", "127.0.0.1:18091"],
+                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)]
+        direct = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        try:
+            for port in (18091, 18092, 18093):
+                for _ in range(50):
+                    try:
+                        direct.open(f"http://127.0.0.1:{port}/__reset", timeout=1).read()
+                        break
+                    except urllib.error.HTTPError:
+                        break          # the proxy answers 403: it is up
+                    except OSError:
+                        time.sleep(0.1)
+            os.environ["AH_EGRESS_PROXY"] = "http://127.0.0.1:18093"
+            # urllib skips any proxy for hosts in no_proxy; clear it so the
+            # tool really goes through the proxy under test.
+            saved = {k: os.environ.pop(k) for k in ("NO_PROXY", "no_proxy") if k in os.environ}
+            ok = run_tool.dispatch("http_fetch", {"url": "http://127.0.0.1:18091/x?q=1"})
+            no = run_tool.dispatch("http_fetch", {"url": "http://127.0.0.1:18092/leak?d=SECRET"})
+            self.assertEqual((ok["ok"], ok["output"]), (True, "ALLOWED"))
+            self.assertFalse(no["ok"])
+            self.assertIn("403", no["error"])
+            seen = json.loads(direct.open("http://127.0.0.1:18092/__log").read())
+            self.assertEqual(seen, [])
+            got = json.loads(direct.open("http://127.0.0.1:18091/__log").read())
+            self.assertEqual(got[0]["path"], "/x?q=1")
+        finally:
+            os.environ.pop("AH_EGRESS_PROXY", None)
+            os.environ.update(locals().get("saved", {}))
+            for p in procs:
+                p.terminate()
+                p.wait(5)
+
+
 class InProcessBaseline(unittest.TestCase):
     def test_every_attack_fires_with_no_isolation(self):
         os.environ.setdefault("NO_PROXY", "127.0.0.1")

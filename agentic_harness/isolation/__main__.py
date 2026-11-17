@@ -1,4 +1,4 @@
-"""CLI:  python -m agentic_harness.isolation --tiers C0,C1,C2,C2-gvisor"""
+"""CLI:  python -m agentic_harness.isolation --tiers C0,C1,C2,C3,C3-gvisor"""
 import argparse
 import json
 import sys
@@ -10,7 +10,7 @@ from .policy import DEFAULT_TIERS
 
 def main() -> int:
     ap = argparse.ArgumentParser(prog="agentic_harness.isolation")
-    ap.add_argument("--tiers", default="C0,C1,C2,C2-gvisor",
+    ap.add_argument("--tiers", default="C0,C1,C2,C3,C3-gvisor",
                     help="comma-separated tier ids from the tiers file")
     ap.add_argument("--tiers-file", type=Path, default=DEFAULT_TIERS)
     ap.add_argument("--out", type=Path, default=Path("reports/containment"))

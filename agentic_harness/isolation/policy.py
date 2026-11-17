@@ -19,7 +19,10 @@ DEFAULT_TIERS = Path(__file__).with_name("tiers.json")
 
 @dataclass(frozen=True)
 class ToolPolicy:
-    network: str = "lab"              # "lab" = bridged lab network, "none" = no network
+    # "lab"    = bridged network with a route to everything (no egress control)
+    # "none"   = no network interface at all
+    # "egress" = internal-only network; the only way out is the allowlisting proxy
+    network: str = "lab"
     user: Optional[str] = None        # e.g. "65534:65534"; None = image default (root)
     cap_drop_all: bool = False
     no_new_privileges: bool = False
@@ -32,7 +35,7 @@ class ToolPolicy:
     ambient_cred_file: bool = True    # credentials file mounted into the sandbox
 
     def __post_init__(self):
-        if self.network not in ("lab", "none"):
+        if self.network not in ("lab", "none", "egress"):
             raise ValueError(f"unknown network mode: {self.network!r}")
         if self.workspace_mode not in ("rw", "ro"):
             raise ValueError(f"unknown workspace_mode: {self.workspace_mode!r}")
